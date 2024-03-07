@@ -68,3 +68,26 @@ test "errdefer" {
         return;
     };
 }
+
+// Error union returned from a function can have their error sets inferred.
+
+fn createFile() !void {
+    return error.AccessDenied;
+}
+
+test "inferred error set" {
+    // type coercion successfully takes place
+    const x: error{AccessDenied}!void = createFile();
+
+    // Zig does not let ud ignore error unions via _ = x;
+    // we must unwrap it with "try", "catch", or "if" by any means
+    _ = x catch {};
+}
+
+// Erros sets can be merged
+const A = error{ NoDir, PathNotFound };
+const B = error{ OutOfMemory, PathNotFound };
+const C = A || B;
+
+// anyerror is the global error set, which due to being the superset of all sets,
+// can have an error from any set coerced to it.
